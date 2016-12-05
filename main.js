@@ -16,7 +16,7 @@ const controller = Botkit.slackbot({
 });
 
 // connect the bot to a stream of messages
-controller.spawn({token}).startRTM(function(err) {
+controller.spawn({token: token}).startRTM(function(err) {
   if (err) {
     throw new Error(err);
   }
