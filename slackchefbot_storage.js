@@ -3,10 +3,10 @@ const LunchOrders = () => {
     let adminName = '';
     let lunch = '';
     let price = '';
-    // let menu = `Today's menu is ${lunch} at $${price}.`;
+    let menu = `Today's menu is ${lunch} at $${price}.`;
 
     //let group = [];
-    let confirmed = '';
+    let confirmed = [];
     //let declined = [];
 
     const setAdminID = (val) => adminID = val;
@@ -24,7 +24,7 @@ const LunchOrders = () => {
     //const setGroup = (val) => group = val;
     //const getGroup = () => group;
 
-    const setConfirmed = (val) => confirmed = val;
+    const setConfirmed = (val) => confirmed.push(val);
     const getConfirmed = () => confirmed;
 
     //const setDeclined = (val) => declined = val;
