@@ -6,7 +6,12 @@ const { setAdminID, getAdminID, setAdminName, getAdminName, setLunch, getLunch,
         setConfirmed, getConfirmed,
         //setDeclined, getDeclined,
         getMenu } = require('./slackchefbot_storage');
+
 // TODO: add module for NLP - wit.au
+
+// NOTE: during development storage time out occurs after two minutes
+// TODO: integrate database
+// TODO: test live in-memory storage
 
 
 const token = process.env.SLACKBOT_TOKEN;
@@ -14,9 +19,9 @@ const token = process.env.SLACKBOT_TOKEN;
 const controller = Botkit.slackbot({
     // reconnects to Slack RTM after failed connection
     retry: Infinity,
-    debug: false,
+    debug: false
     // verbose logging
-    logLevel: 7
+    // logLevel: 7
 });
 
 controller.spawn({ token: token }).startRTM(function (err) {
@@ -46,29 +51,19 @@ controller.hears(['set lunch (.*) set price (.*)'], ['direct_message', 'direct_m
         // console.log(getAdminID() + getAdminName());
         bot.reply(message, getAdminName() + ' is today\'s lunch administrator.');
     })
-
-    // TODO: investigate channel_not_found	error: not_authed
-    // how to get channel id back from users methods
-    // for now - team members need to register to be added
-    // bot.api.channels.info({ channel: 'D39TVBP4H' }, (error, response) => {
-    //    console.log(util.inspect(response, false, null));
-    //    //bot.reply(message, response.channel.members);
-    // })
-
-    /* channel_not_found	error: not_authed
-    team members need to be manually entered into the array */
 });
 
 controller.hears(['hello'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
-
+    // TEST
+    bot.reply(message,  getLunch());
     bot.reply(message, 'Hi.');
+    bot.reply(message, `${getAdminName()} is the administrator for today's lunch`);
 
 });
 
 // on today's menu
 controller.hears(['lunch', 'menu'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
-
-    // TODO: not returning
+    // TODO: check if user has confirmed. If yes, only send menu
     bot.reply(message, `Today's menu is ${getLunch()} at $${getPrice()}. Are you in?`);
 
 });
@@ -76,15 +71,13 @@ controller.hears(['lunch', 'menu'], ['direct_message', 'direct_mention', 'mentio
 // user confirms
 controller.hears([/[i\'m] in/, 'yes', 'confirm'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
-    // TODO: not returning
     bot.reply(message, `${getLunch()} is on the way ;)`);
 
-    // TODO add user to confirmed not working: returns '1'
     bot.api.users.info({ user: message.user }, (error, response) => {
-        user = response.user.id;
-        // pass getConfirmed array into setConfirmed and push new value
-        setConfirmed(getConfirmed().push('testing123'));
-        bot.reply(message, 'CONFIRMED ' + getConfirmed());
+        // user = response.user.id;
+        setConfirmed(response.user.name);
+        // TODO: list to display name and real name
+        bot.reply(message, 'CONFIRMED\n' + getConfirmed().join('\n'));
         //console.log('RESPONSE' + response);
         console.log(util.inspect(response, false, null));
     });
@@ -98,17 +91,11 @@ controller.hears([/[i\'m] out/, 'no'], ['direct_message', 'direct_mention', 'men
 
     bot.reply(message, 'Perhaps you can join us tomorrow.');
 
-
 });
 
-// team members have to register for the service - channel.info not working
-controller.hears(['register me'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+// user checks for adminimistrator
+controller.hears(['admin'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
-    bot.api.users.info({ user: message.user }, (error, response) => {
+    bot.reply(message, `${getAdminName()} is the administrator for today's lunch.`);
 
-        // console.log(util.inspect(response, false, null));
-        // add user to group
-
-        bot.reply(message, `You're registered  for slackchef lunches ${response.user.name}. Happy eating!`);
-    });
 });
