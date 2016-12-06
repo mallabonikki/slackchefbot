@@ -1,104 +1,114 @@
-// const botkitStoragePostgres = require('botkit-storage-postgres');
 const Botkit = require('botkit');
-const { getState, setState, isInQueue, getUserIndex, makeNiceList } = require('./slackchefbot_storage.js');
+const util = require('util')
+const { setAdminID, getAdminID, setAdminName, getAdminName, setLunch, getLunch,
+        setPrice, getPrice,
+        //setGroup, getGroup,
+        setConfirmed, getConfirmed,
+        //setDeclined, getDeclined,
+        getMenu } = require('./slackchefbot_storage');
 // TODO: add module for NLP - wit.au
-
-
-// TODO: rewrite into storage module
-var admin = '';
-var lunch = '';
-var price = 0;
-var menu = `Today's menu is ${lunch} at $${price}.`;
-
-// bot to send order reminder to remaining group
-var group = [];
-var confirmed = [];
 
 
 const token = process.env.SLACKBOT_TOKEN;
 
 const controller = Botkit.slackbot({
-  storage: my_storage_provider
-  // storage: botkitStoragePostgres({
-  //   host: 'localhost',
-  //   user: 'botkit',
-  //   password: 'botkit',
-  //   database: 'botkit'
-  // }),
-  // reconnects to Slack RTM after failed connection
-  retry: Infinity,
-  debug: false,
-  // verbose logging
-  logLevel: 7
+    // reconnects to Slack RTM after failed connection
+    retry: Infinity,
+    debug: false,
+    // verbose logging
+    logLevel: 7
 });
 
-// connect the bot to a stream of messages
-controller.spawn({token: token}).startRTM(function(err) {
-  if (err) {
-    throw new Error(err);
-  }
+controller.spawn({ token: token }).startRTM(function (err) {
+    if (err) {
+        throw new Error(err);
+    }
 });
+
+controller.on('bot_channel_join', function (bot, message) {
+    bot.reply(message, 'Let\'s lunch people.')
+})
 
 // admin sets lunch and price
-controller.hears(['set lunch (.*) set price (.*)'], ['direct_message', 'direct_mention', 'mention'], function(bot, message) {
-  // TODO: store values
-  lunch = message.match[1];
-  price = message.match[2];
-  // controller.storage.users.save({id: message.user, foo:'bar'}, function(err) { ... });
+controller.hears(['set lunch (.*) set price (.*)'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+    setLunch(message.match[1]);
+    setPrice(message.match[2]);
+    // console.log('LUNCH: ' + getLunch())
+    // console.log('PRICE: ' + price)
+    // console.log(message.user)
+    // bot.reply(message, menu + getLunch());
+    bot.reply(message, `Today's menu is ${getLunch()} at $${getPrice()}.`);
+    // TODO: add 'Please confirm? Y/N'
 
-  // bot.reply(message, 'LUNCH: ' + lunch + menu)
-  // bot.reply(message, 'PRICE: ' + price + menu)
-  bot.reply(message, menu)
+    bot.api.users.info({user: message.user}, (error, response) => {
+        setAdminID(response.user.id);
+        setAdminName(response.user.name);
+        // console.log(getAdminID() + getAdminName());
+        bot.reply(message, getAdminName() + ' is today\'s lunch administrator.');
+    })
 
-  // TODO: store admin
-  // get user id and store admin in storage
-  bot.api.users.info({user: message.user}, (error, response) => {
-    admin = response.user.id;
-    console.log('ADMIN: ' + admin)
+    // TODO: investigate channel_not_found	error: not_authed
+    // how to get channel id back from users methods
+    // for now - team members need to register to be added
+    // bot.api.channels.info({ channel: 'D39TVBP4H' }, (error, response) => {
+    //    console.log(util.inspect(response, false, null));
+    //    //bot.reply(message, response.channel.members);
+    // })
 
-
-  });
-
-  // validate if they enter lunch and price at the same time
-
-  // get group details - all user_ids in channel, store in group - cannot be immutable.
-
+    /* channel_not_found	error: not_authed
+    team members need to be manually entered into the array */
 });
 
-controller.hears(['hello'], ['direct_message', 'direct_mention', 'mention'], function(bot, message) {
+controller.hears(['hello'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
-  bot.reply(message,'Hi.');
+    bot.reply(message, 'Hi.');
 
 });
 
 // on today's menu
-controller.hears(['lunch', 'menu'], ['direct_message', 'direct_mention', 'mention'], function(bot, message) {
+controller.hears(['lunch', 'menu'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
-  bot.reply(message, menu);
-  console.log('MESSAGE USER ' + message.user);
-  console.log('MESSAGE TEXT ' + message.text);
-  console.log('MESSAGE TS ' + message.ts);
+    // TODO: not returning
+    bot.reply(message, `Today's menu is ${getLunch()} at $${getPrice()}. Are you in?`);
 
 });
 
 // user confirms
-controller.hears([/[i\'m] in/, 'yes', 'confirm'], ['direct_message', 'direct_mention', 'mention'], function(bot, message) {
+controller.hears([/[i\'m] in/, 'yes', 'confirm'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
-  bot.reply(message,'Mexican burritos on the way ;)');
+    // TODO: not returning
+    bot.reply(message, `${getLunch()} is on the way ;)`);
 
-  // TODO add user to confirmed
-  // gets user id
-  bot.api.users.info({user: message.user}, (error, response) => {
-    user = response.user.id;
-
-  });
+    // TODO add user to confirmed not working: returns '1'
+    bot.api.users.info({ user: message.user }, (error, response) => {
+        user = response.user.id;
+        // pass getConfirmed array into setConfirmed and push new value
+        setConfirmed(getConfirmed().push('testing123'));
+        bot.reply(message, 'CONFIRMED ' + getConfirmed());
+        //console.log('RESPONSE' + response);
+        console.log(util.inspect(response, false, null));
+    });
 
 });
 
 // user declines
-controller.hears([/[i\'m] out/, 'no'], ['direct_message', 'direct_mention', 'mention'], function(bot, message) {
+controller.hears([/[i\'m] out/, 'no'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
-  bot.reply(message,'Perhaps you can join us tomorrow.');
-  // TODO remove user from group
+    // TODO remove user from group
 
+    bot.reply(message, 'Perhaps you can join us tomorrow.');
+
+
+});
+
+// team members have to register for the service - channel.info not working
+controller.hears(['register me'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+
+    bot.api.users.info({ user: message.user }, (error, response) => {
+
+        // console.log(util.inspect(response, false, null));
+        // add user to group
+
+        bot.reply(message, `You're registered  for slackchef lunches ${response.user.name}. Happy eating!`);
+    });
 });
