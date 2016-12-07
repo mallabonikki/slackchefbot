@@ -14,7 +14,7 @@ const { setAdminID, getAdminID, setAdminName, getAdminName, setLunch, getLunch,
 // TODO: test live in-memory storage
 
 
-const token = process.env.SLACKBOT_TOKEN;
+const token = process.env.SLACK_TOKEN;
 
 const controller = Botkit.slackbot({
     // reconnects to Slack RTM after failed connection
