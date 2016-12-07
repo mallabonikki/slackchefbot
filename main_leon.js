@@ -1,76 +1,114 @@
 const Botkit = require('botkit');
-// TODO add module/s for list and database
-// TODO add custom modules for NLP - wit.au
+const util = require('util')
+const { setAdminID, getAdminID, setAdminName, getAdminName, setLunch, getLunch,
+        setPrice, getPrice,
+        //setGroup, getGroup,
+        setConfirmed, getConfirmed,
+        //setDeclined, getDeclined,
+        getMenu } = require('./slackchefbot_storage');
+// TODO: add module for NLP - wit.au
 
 
-const token = process.env.SLACK_TOKEN;
-
+const token = process.env.SLACKBOT_TOKEN;
 
 const controller = Botkit.slackbot({
-  // reconnects to Slack RTM after failed connection
-  retry: Infinity,
-  debug: false,
-  // verbose logging
-  // logLevel: 7
+    // reconnects to Slack RTM after failed connection
+    retry: Infinity,
+    debug: false,
+    // verbose logging
+    logLevel: 7
 });
 
-// connect the bot to a stream of messages
-controller.spawn({token: token}).startRTM(function(err) {
-  if (err) {
-    throw new Error(err);
-  }
+controller.spawn({ token: token }).startRTM(function (err) {
+    if (err) {
+        throw new Error(err);
+    }
 });
 
-// bot listens to...
-controller.hears(['hello'],['direct_message','direct_mention','mention'],function(bot,message) {
+controller.on('bot_channel_join', function (bot, message) {
+    bot.reply(message, 'Let\'s lunch people.')
+})
 
-  bot.reply(message,'Hi.');
+// admin sets lunch and price
+controller.hears(['set lunch (.*) set price (.*)'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+    setLunch(message.match[1]);
+    setPrice(message.match[2]);
+    // console.log('LUNCH: ' + getLunch())
+    // console.log('PRICE: ' + price)
+    // console.log(message.user)
+    // bot.reply(message, menu + getLunch());
+    bot.reply(message, `Today's menu is ${getLunch()} at $${getPrice()}.`);
+    // TODO: add 'Please confirm? Y/N'
+
+    bot.api.users.info({user: message.user}, (error, response) => {
+        setAdminID(response.user.id);
+        setAdminName(response.user.name);
+        // console.log(getAdminID() + getAdminName());
+        bot.reply(message, getAdminName() + ' is today\'s lunch administrator.');
+    })
+
+    // TODO: investigate channel_not_found	error: not_authed
+    // how to get channel id back from users methods
+    // for now - team members need to register to be added
+    // bot.api.channels.info({ channel: 'D39TVBP4H' }, (error, response) => {
+    //    console.log(util.inspect(response, false, null));
+    //    //bot.reply(message, response.channel.members);
+    // })
+
+    /* channel_not_found	error: not_authed
+    team members need to be manually entered into the array */
+});
+
+controller.hears(['hello'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+
+    bot.reply(message, 'Hi.');
 
 });
 
 // on today's menu
-controller.hears(['lunch', 'menu'],['direct_message','direct_mention','mention'],function(bot,message) {
+controller.hears(['lunch', 'menu'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
-  var images = ["https://static01.nyt.com/images/2015/12/09/dining/09COOKING-BEEFROAST3/09COOKING-BEEFROAST3-superJumbo.jpg", "https://www.usfoods.com/content/www/home/food/scoop/scoop-favorites/beef-pork-poultry/fully-cooked-pork-belly/_jcr_content/mainpar/image_0.img.jpg/1374862380437.jpg", "http://finedininglovers.cdn.crosscast-system.com/BlogPost/l_2737_11010041.jpg", "http://www.seriouseats.com/images/20100716-sushi-nigiri-01.jpg"]
-
-  const menu = ["beef", "pork", "vege", "seafood"].map( (food, index) => { return {
-      dish : food,
-      price : parseInt(Math.random()*6),
-      image_url : images[index]
-    }
-  });
-
-
-  var menuDisplay = menu.map( food => {
-    return {
-      "text": food.dish + ": $" + food.price,
-      "image_url": ""
-    };
-  })
-
-
-  var attachment = {
-    "attachments": [{"title": "Today's menu"}].concat(menuDisplay)
-  }
-
-
-
-  bot.reply(message, attachment);
+    // TODO: not returning
+    bot.reply(message, `Today's menu is ${getLunch()} at $${getPrice()}. Are you in?`);
 
 });
 
 // user confirms
-controller.hears(['yes', 'confirm'],['direct_message','direct_mention'],function(bot,message) {
+controller.hears([/[i\'m] in/, 'yes', 'confirm'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
-  bot.reply(message,'Mexican burritos on the way ;)');
-  // TODO add user to the list
+    // TODO: not returning
+    bot.reply(message, `${getLunch()} is on the way ;)`);
+
+    // TODO add user to confirmed not working: returns '1'
+    bot.api.users.info({ user: message.user }, (error, response) => {
+        user = response.user.id;
+        // pass getConfirmed array into setConfirmed and push new value
+        setConfirmed(getConfirmed().push('testing123'));
+        bot.reply(message, 'CONFIRMED ' + getConfirmed());
+        //console.log('RESPONSE' + response);
+        console.log(util.inspect(response, false, null));
+    });
 
 });
 
 // user declines
-controller.hears(['no'],['direct_message','direct_mention'],function(bot,message) {
+controller.hears([/[i\'m] out/, 'no'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
-  bot.reply(message,'Perhaps you can join us tomorrow.');
-  // TODO remove user from the list
+    // TODO remove user from group
 
+    bot.reply(message, 'Perhaps you can join us tomorrow.');
+
+
+});
+
+// team members have to register for the service - channel.info not working
+controller.hears(['register me'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+
+    bot.api.users.info({ user: message.user }, (error, response) => {
+
+        // console.log(util.inspect(response, false, null));
+        // add user to group
+
+        bot.reply(message, `You're registered  for slackchef lunches ${response.user.name}. Happy eating!`);
+    });
 });
