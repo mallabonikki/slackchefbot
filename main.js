@@ -24,18 +24,12 @@ const controller = Botkit.slackbot({
     // logLevel: 7
 });
 
-<<<<<<< HEAD
+
 // connect the bot to a stream of messages
 controller.spawn({token: token}).startRTM(function(err) {
   if (err) {
     throw new Error(err);
   }
-=======
-controller.spawn({ token: token }).startRTM(function (err) {
-    if (err) {
-        throw new Error(err);
-    }
->>>>>>> e9880a57f4149cdd680eec54093b2c5ced43741f
 });
 
 controller.on('bot_channel_join', function (bot, message) {
