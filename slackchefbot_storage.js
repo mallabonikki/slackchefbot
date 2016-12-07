@@ -6,7 +6,7 @@ const LunchOrders = () => {
     let price = '';
 
     let confirmed = [];
-    //let declined = [];
+    let declined = [];
 
     const setAdminID = (val) => adminID = val;
     const getAdminID = () => adminID;
@@ -25,11 +25,21 @@ const LunchOrders = () => {
 
     const renderMenu = () => `1. Lunch item: ${getLunch()}\n 2. Price: $${getPrice()}`;
 
-    const setConfirmed = (val) => confirmed.push(val);
+    const setConfirmed = (val) => confirmed.push('@' + val);
+    // TODO: setConfirmed
+    // if user is in the confirmed array, do nothing
+    // if user is in declined array, delete user from declined array
+    // push value to the confirmed array
+
     const getConfirmed = () => confirmed;
 
-    //const setDeclined = (val) => declined = val;
-    //const getDeclined = () => declined;
+    const setDeclined = (val) => declined.push(val);
+    // TODO: setDeclined
+    // if user is in the declined array, do nothing
+    // if user is in declined array, delete user from declined array
+    // push value to the declined array
+
+    const getDeclined = () => declined;
 
     return {
         setAdminID,
@@ -45,8 +55,8 @@ const LunchOrders = () => {
         renderMenu,
         setConfirmed,
         getConfirmed,
-        //setDeclined,
-        //getDeclined,
+        setDeclined,
+        getDeclined,
     }
 };
 

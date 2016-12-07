@@ -42,7 +42,7 @@ controller.on('bot_channel_join', function (bot, message) {
     bot.reply(message, 'Let\'s lunch people.')
 })
 
-// user initiates administator access
+// initiates administator access
 controller.hears(['i am the administrator'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
     // TODO: check for existing administrator and block other users from overriding
@@ -117,6 +117,8 @@ controller.hears(['i am the administrator'], ['direct_message', 'direct_mention'
 controller.hears(['send'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
     // console.log(message);
 
+    // TODO: validate admin
+
     // send menu to the channel
     bot.say(
         {
@@ -126,7 +128,12 @@ controller.hears(['send'], ['direct_message', 'direct_mention', 'mention'], func
     );
 });
 
+
+// ALL USERS
+
 controller.hears(['hello'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+    // TODO: bot says helo and prints commands.
+    // if there is an administrator, send details
     // TEST
     bot.reply(message,  getLunch());
     bot.reply(message, 'Hi.');
@@ -142,15 +149,15 @@ controller.hears(['lunch', 'menu'], ['direct_message', 'direct_mention', 'mentio
 });
 
 // user confirms
-controller.hears([/[i\'m] in/, 'confirm'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
-
-    bot.reply(message, `${getLunch()} is on the way ;)`);
+controller.hears([/[i\'m] in/], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
     bot.api.users.info({ user: message.user }, (error, response) => {
-        setConfirmed(response.user.name);
+
+        // TODO: validation for confirmed
+        setConfirmed(response.user.id);
 
         // TODO: list to display name and real name
-        bot.reply(message, 'CONFIRMED\n' + getConfirmed().join('\n'));
+        bot.reply(message, 'Thanks for confirming '+ response.user.name);
         //console.log('RESPONSE' + response);
         // console.log(util.inspect(response, false, null));
     });
@@ -158,19 +165,56 @@ controller.hears([/[i\'m] in/, 'confirm'], ['direct_message', 'direct_mention', 
 });
 
 // user declines
-controller.hears([/[i\'m] out/], 'decline', ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+// controller.hears([/[i\'m] out/], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+//
+//     bot.api.users.info({ user: message.user }, (error, response) => {
+//
+//         // TODO: validation for delined
+//         setDeclined(response.user.name);
+//
+//         // TODO: list to display name and real name
+//         bot.reply(message, 'Sorry you declined '+ response.user.name);
+//         //console.log('RESPONSE' + response);
+//         // console.log(util.inspect(response, false, null));
+//     });
+//
+// });
 
-    // TODO remove user from group
+// user locates the administrator
+// controller.hears(['admin'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+//
+//     bot.reply(message, `${getAdminName()} is the administrator for today's lunch.`);
+//
+// });
 
-    bot.reply(message, 'Perhaps you can join us tomorrow.');
 
-});
+// // ADMIN ONLY
 
-// user checks for administrator
-controller.hears(['admin'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
-
-    bot.reply(message, `${getAdminName()} is the administrator for today's lunch.`);
-
-});
-
-// administrator clears session
+// admin gets confirmed list
+// controller.hears(['list in'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+//
+//     // TODO: validate admin
+//     // response.user.name
+//
+//     // TODO: list to display name and real name
+//     bot.reply(message, `CONFIRMED\n ${getConfirmed().join('\n')}`);
+//     //console.log('RESPONSE' + response);
+//     // console.log(util.inspect(response, false, null));
+//
+// });
+//
+// // admin gets declined list
+// controller.hears(['list out'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+//
+//   // TODO: validate admin
+//   // response.user.name
+//
+//     // TODO: list to display name and real name
+//     bot.reply(message, `DECLINED\n ${getDeclined().join('\n')}`);
+//     //console.log('RESPONSE' + response);
+//     // console.log(util.inspect(response, false, null));
+//
+// });
+//
+//
+// // TODO: administrator clears session
