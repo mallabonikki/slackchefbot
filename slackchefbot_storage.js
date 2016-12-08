@@ -26,10 +26,55 @@ const Storage = () => {
     const setImageUrl = (val) => price = val;
     const getImageUrl = () => price;
 
-    // TODO: Leon to refactor this function
-    const renderMenu = () => `1. Lunch item: ${getLunch()}\n 2. Price: $${getPrice()}`;
+    const printMenu = (options) => {
+      var menu = {
+        "attachments" : [ {
+            "fields" : processOptions(options)
+          }
+        ]
+      }
+      function processOptions(options) {
+        return options.split(" ").map(
+            (o) => { switch( o ) {
+              case "lunch" : return {
+                  "title" : "Dish",
+                  "value" : getLunch(),
+                  "short" : true
+                };
+                break;
+              case "price" : return {
+                  "title" : "Price",
+                  "value" : `$${getPrice()}`,
+                  "short" : true
+                };
+                break;
+              case "organiser" : return {
+                  "title" : "Organiser",
+                  "value" : getAdminName(),
+                  "short" : true
+                };
+                break;
+              case "total" : return {
+                  "title" : "Total Price so far",
+                  "value" : `$${getPrice()*(getConfirmed().length+1)}`,
+                  "short" : true
+                };
+                break;
+              case "people" : return {
+                  "title" : "People who are in",
+                  "value" : getConfirmed().join(", "),
+                  "short" : true
+                };
+                break;
+              default : break;
+          }
+        } )
+      }
+      return menu
+    }
 
     const setConfirmed = (val) => confirmed.push('<@' + val + '>');
+
     // TODO: setConfirmed
     // if user is in the confirmed array, do nothing
     // if user is in declined array, delete user from declined array
@@ -58,7 +103,7 @@ const Storage = () => {
         getPrice,
         setImageUrl,
         getImageUrl,
-        renderMenu,
+        printMenu,
         setConfirmed,
         getConfirmed,
         setDeclined,

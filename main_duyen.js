@@ -12,11 +12,14 @@ const setLunch = Storage.setLunch;
 const getLunch = Storage.getLunch;
 const setPrice = Storage.setPrice;
 const getPrice = Storage.getPrice;
-const renderMenu = Storage.renderMenu;
+const setImageUrl = Storage.setImageUrl;
+const getImageUrl = Storage.getImageUrl;
+const printMenu = Storage.printMenu;
 const setConfirmed = Storage.setConfirmed;
 const getConfirmed = Storage.getConfirmed;
 const setDeclined = Storage.setDeclined;
 const getDeclined = Storage.getDeclined;
+
 
 // TODO: add module for NLP - wit.au
 // TODO: integrate database
@@ -191,36 +194,6 @@ controller.hears(['admin'], ['direct_message', 'direct_mention', 'mention'], fun
 
 });
 
-// controller.hears(['help'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
-//
-//     // TODO: validate if admin, show admin menu
-//     bot.reply(
-//       message,
-//       `Hi <@${message.user}>, thanks for organising today's lunch!\n
-//       You're commands are':\n
-//       \`menu\` - see today's menu\n
-//       \`change lunch\` - change the lunch item\n
-//       \`change price\`\n
-//       \`change image url\`\n
-//       \`send menu\` - send the menu to the channel\n
-//       \`list in\` - see all confirmed lunchers\n
-//       \`list out\` - see all declined lunchers\n
-//       Type \`help\` any time to see this list again.`
-//     );
-//
-//     // else
-//     bot.reply(
-//       message,
-//       `Hi <@${message.user}>! You can:
-//         \`menu\` - see today's menu
-//         \`i'm in\` - opt in for lunch
-//         \`i'm out\` - opt out for lunch
-//         \`list in\` - see all confirmed lunchers
-//         \`list out\` - see all declined lunchers
-//         Type \`help\` any time to see this list again.`
-//     );
-//
-// });
 
 
 // ADMIN ONLY
