@@ -102,7 +102,7 @@ controller.hears(['send menu'], ['direct_message', 'direct_mention', 'mention'],
     // console.log(message);
 
     // TODO: validate admin
-    var menu = printMenu("organiser food price");
+    var menu = printMenu("organiser lunch price");
     menu["channel"] = getChannelID();
     menu["attachments"][0]['fallback'] = `Organiser: ${getAdminName()} Dish: ${getLunch()} Price: ${getPrice()}`;
 
