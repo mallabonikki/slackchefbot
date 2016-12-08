@@ -1,56 +1,23 @@
 
 const Botkit = require('botkit');
 const util = require('util');
-const db = require('./db');
+// const db = require('./db');
 
-// console.log(db.pgp.end())
+var provider = require('./provider')
 
-// var db = require('./db');
-// db.any("select * from tbSession")
+var sql = require('./sql').sessions;
+
+// db.any("select * from sessions where id=$1", [1])
 //     .then(function (data) {
-//         console.log("DATA:", data)
+//         console.log("Slack Usrer ID:", data[0].slack_id);
 //     })
 //     .catch(function (error) {
-//         console.log("Error:", error);
+//         console.log("ERROR:", error);
 //     })
-//     .finally(function () { 
-//         // pgp.end() 
-//     });
+//     .finally(db.end); // for immediate app exit, closing the connection pool.
 
-// var promise = require('bluebird')
-// var options = { promiseLib: promise }
-// var pgp = require('pg-promise')(options)
-
-// db = pgp('postgres://Nic@localhost:3000/slackbotDB')
-
-// db.any("select * from tbSession").then(function (data){
-//     console.log(data)
-// });
-
-//--testing region-----
-
-// var promise = require('bluebird'); // or any other Promise/A+ compatible library;
-
-// var options = {
-//     promiseLib: promise // overriding the default (ES6 Promise);
-// };
-
-// var pgp = require('pg-promise')(options);
-// var cn= 'postgres://postgres@localhost:5432/slackbotDB';
-// var db = pgp(cn); // database instance;
-
-// NOTE: The default ES6 Promise doesn't have method `.finally`, but it is
-// available within Bluebird library used here as an example.
-
-db.any("select * from sessions")
-    .then(function (data) {
-        console.log("DATA:", data);
-    })
-    .catch(function (error) {
-        console.log("ERROR:", error);
-    })
-    .finally(db.end); // for immediate app exit, closing the connection pool.
-//----end of testing region
+// console.log(provider.findUser());
+provider.addSession('xyz123', 'duyen');
 
 
 

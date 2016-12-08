@@ -1,24 +1,15 @@
 var QueryFile = require('pg-promise').QueryFile;
-var path = require('path')
-
-// var cn = { 
-//     host: 'localhost',
-//     port: 3000,
-//     database: 'slackbotDB',
-//     user: 'Nick',
-//     password: '1'
-// }
-
-// var db  = QueryFile(cn);
+var path = require('path');
 
 function sql(file) {
-    var fullPath = path.join(__dirname, file);
+    var fullPath = path.join(__dirname, file); // generating full path;
     return new QueryFile(fullPath, {minify: true});
 }
 
 module.exports = {
-    users: {
-        add: sql('users.create.sql')
-        // search: sql('users.search.sql')
+    sessions: {
+        add: sql('sql/sessions/create.sql'),
+        search: sql('sql/sessions/search.sql')
     }
-}
+};
+
