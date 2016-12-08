@@ -1,4 +1,4 @@
-const LunchOrders = () => {
+const Storage = () => {
     let adminID = '';
     let adminName = '';
     let channelID = '';
@@ -23,7 +23,8 @@ const LunchOrders = () => {
     const setPrice = (val) => price = val;
     const getPrice = () => price;
 
-    const renderMenu = () => `1. Lunch item: ${getLunch()}\n 2. Price: $${getPrice()}`;
+    const setImageUrl = (val) => price = val;
+    const getImageUrl = () => price;
 
     const printMenu = (options) => {
       var menu = {
@@ -72,7 +73,8 @@ const LunchOrders = () => {
       return menu
     }
 
-    const setConfirmed = (val) => confirmed.push('@' + val);
+    const setConfirmed = (val) => confirmed.push('<@' + val + '>');
+
     // TODO: setConfirmed
     // if user is in the confirmed array, do nothing
     // if user is in declined array, delete user from declined array
@@ -80,7 +82,7 @@ const LunchOrders = () => {
 
     const getConfirmed = () => confirmed;
 
-    const setDeclined = (val) => declined.push(val);
+    const setDeclined = (val) => declined.push('<@' + val + '>');
     // TODO: setDeclined
     // if user is in the declined array, do nothing
     // if user is in declined array, delete user from declined array
@@ -99,7 +101,9 @@ const LunchOrders = () => {
         getLunch,
         setPrice,
         getPrice,
-        renderMenu,
+        setImageUrl,
+        getImageUrl,
+        printMenu,
         setConfirmed,
         getConfirmed,
         setDeclined,
@@ -107,4 +111,4 @@ const LunchOrders = () => {
     }
 };
 
-module.exports = LunchOrders();
+module.exports = Storage();
