@@ -6,7 +6,7 @@ const LunchOrders = () => {
     let menu = `Today's menu is ${lunch} at $${price}.`;
 
     //let group = [];
-    let confirmed = []; 
+    let confirmed = [];
     //let declined = [];
 
     const setAdminID = (val) => adminID = val;
