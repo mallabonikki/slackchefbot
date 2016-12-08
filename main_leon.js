@@ -1,17 +1,27 @@
 const Botkit = require('botkit');
 const util = require('util')
-const { setAdminID, getAdminID, setAdminName, getAdminName, setLunch, getLunch,
-        setPrice, getPrice,
-        //setGroup, getGroup,
-        setConfirmed, getConfirmed,
-        //setDeclined, getDeclined,
-        getMenu } = require('./slackchefbot_storage');
+
+const Storage = require('./slackchefbot_storage');
+const setAdminID = Storage.setAdminID;
+const getAdminID = Storage.getAdminID;
+const setAdminName = Storage.setAdminName;
+const getAdminName = Storage.getAdminName;
+const setChannelID = Storage.setChannelID;
+const getChannelID = Storage.getChannelID;
+const setLunch = Storage.setLunch;
+const getLunch = Storage.getLunch;
+const setPrice = Storage.setPrice;
+const getPrice = Storage.getPrice;
+const setImageUrl = Storage.setImageUrl;
+const getImageUrl = Storage.getImageUrl;
+const printMenu = Storage.printMenu;
+const setConfirmed = Storage.setConfirmed;
+const getConfirmed = Storage.getConfirmed;
+const removedConfirmed = Storage.removedConfirmed;
+
 
 // TODO: add module for NLP - wit.au
-
-// NOTE: during development storage time out occurs after two minutes
 // TODO: integrate database
-// TODO: test live in-memory storage
 
 
 const token = process.env.SLACK_TOKEN;
@@ -19,188 +29,154 @@ const token = process.env.SLACK_TOKEN;
 const controller = Botkit.slackbot({
     // reconnects to Slack RTM after failed connection
     retry: Infinity,
-    debug: false
+    debug: false,
     // verbose logging
-    // logLevel: 7
+    logLevel: 4
 });
 
-
-// connect the bot to a stream of messages
-controller.spawn({token: token}).startRTM(function(err) {
-  if (err) {
-    throw new Error(err);
-  }
+controller.spawn({ token: token }).startRTM(function (err) {
+    if (err) {
+        throw new Error(err);
+    }
 });
 
 controller.on('bot_channel_join', function (bot, message) {
     bot.reply(message, 'Let\'s lunch people.')
 })
 
-// admin sets lunch and price
-controller.hears(['set lunch (.*) set price (.*)'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
-    setLunch(message.match[1]);
-    setPrice(message.match[2]);
+// initiates administator access
+controller.hears(['set admin'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
-    // var menu = {
-    //   "attachments": [ {
-    //
-    //         "title" : getLunch(),
-    //         "title_link" : `https://www.google.com.au/#q=${getLunch()}`
-    //
-    //   }]
-    // }
+    // TODO: check for existing administrator and block other users from overriding
+    if (getAdminName() !== '' || getAdminID() !== '') {
+      bot.reply(message, "You can't make a new lunch order while someone else is.");
+      return;
+    }
 
 
-    bot.reply(message, menu("food price"));
-    // TODO: add 'Please confirm? Y/N'
-
-    bot.api.users.info({user: message.user}, (error, response) => {
+    // send administrator details to storage
+    bot.api.users.info({ user: message.user }, (error, response) => {
         setAdminID(response.user.id);
         setAdminName(response.user.name);
-        // console.log(getAdminID() + getAdminName());
-        bot.reply(message, getAdminName() + ' is today\'s lunch administrator.');
-    })
+        setChannelID(message.channel);
+        bot.reply(message, getAdminName() + ' is currently setting up today\'s lunch.');
+    });
+
+    setTimeout(function () {
+        // bot starts conversation to prompt for details
+        bot.startPrivateConversation(message, function (err, convo) {
+
+            // set lunch
+            convo.ask('What\'s today\'s lunch item?', function (response, convo) {
+                setLunch(response.text);
+                convo.next();
+
+                // set price
+                convo.ask('Set the price.', function (response, convo) {
+                    setPrice(response.text);
+                    convo.next();
+
+
+                    let menu  = printMenu("lunch price")
+                    menu["text"] = "This is the menu that will be sent to the channel:"
+
+                    bot.reply(message,
+                      menu
+                    );
+
+
+
+                    convo.say(
+                      `To make further changes: \n
+                      \`change lunch\` to change the lunch item\n
+                      \`change price\` to change the price of the lunch\n
+                      \`send menu\` - send the menu to the channel`)
+                });
+            });
+
+        });
+    }, 1000);
 });
 
+controller.hears(['send menu'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+    // console.log(message);
+
+    // TODO: validate admin
+    var menu = printMenu("organiser food price");
+    menu["channel"] = getChannelID();
+    menu["attachments"][0]['fallback'] = `Organiser: ${getAdminName()} Dish: ${getLunch()} Price: ${getPrice()}`;
+
+    // send menu to the channel
+    bot.say(
+        menu
+    );
+});
+
+
+// ALL USERS
+
 controller.hears(['hello'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
-    // TEST
-    bot.reply(message,  getLunch());
-    bot.reply(message, 'Hi.');
-    bot.reply(message, `${getAdminName()} is the administrator for today's lunch`);
+    // TODO: bot says helo and prints commands.
+    // if there is an administrator, send details
+    bot.reply(message,
+      `Hi there. <@slackchefbot_duyen> is a lunch service.
+      You can opt in or opt out of group lunches.
+      Type \`help\` any time to see what's possible.`
+    );
 
 });
 
 // on today's menu
 controller.hears(['lunch', 'menu'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
     // TODO: check if user has confirmed. If yes, only send menu
-
-
-    bot.reply(message, menu("total lunch price"));
+    bot.reply(message, `Today's menu is ${getLunch()} at $${getPrice()}. Are you in?`);
 
 });
 
-function menu(options) {
-  var o = options.split(" ");
-
-  var menu = {
-    "attachments" : [ {
-        "fields" : processOptions(options)
-
-      }
-    ]
-
-  }
-  function processOptions(options) {
-  return options.split(" ").map(
-      (o) => { switch( o ) {
-        case "lunch" : return {
-            "title" : "Dish",
-            "value" : getLunch(),
-            "short" : true
-          };
-          break;
-        case "price" : return {
-            "title" : "Price",
-            "value" : `$${getPrice()}`,
-            "short" : true
-          };
-          break;
-        case "organiser" : return {
-            "title" : "Organiser",
-            "value" : getAdminName(),
-            "short" : true
-          };
-          break;
-        case "total" : return {
-            "title" : "Total Price so far",
-            "value" : `$${getPrice()*(getConfirmed().length+1)}`,
-            "short" : true
-          };
-          break;
-        case "people" : return {
-            "title" : "People who are in",
-            "value" : getConfirmed().join(", "),
-            "short" : true
-          };
-          break;
-        default : break;
-    } } )
-  }
-
-
-
-  // if (o.includes("lunch")) {
-  //   menu["attachments"][0]["fields"].push({
-  //       "title" : "Dish",
-  //       "value" : getLunch(),
-  //       "short" : true
-  //     });
-  // }
-  // if (o.includes("price")) {
-  //     menu["attachments"][0]["fields"].push({
-  //       "title" : "Price",
-  //       "value" : `$${getPrice()}`,
-  //       "short" : true
-  //     });
-  // }
-  // if (o.includes("organiser")) {
-  //   menu["attachments"][0]["fields"].push({
-  //       "title" : "Organiser",
-  //       "value" : getAdminName(),
-  //       "short" : true
-  //     });
-  // }
-  // if (o.includes("total")) {
-  //   menu["attachments"][0]["fields"].push({
-  //       "title" : "Total Price so far",
-  //       "value" : `$${getPrice()*(getConfirmed().length+1)}`,
-  //       "short" : true
-  //   });
-  // }
-  // if (o.includes("people")) {
-  //   menu["attachments"][0]["fields"].push({
-  //       "title" : "People who are in",
-  //       "value" : getConfirmed().join(", "),
-  //       "short" : false
-  //   });
-  // }
-
-  return menu
-
-}
-
 // user confirms
-controller.hears([/[i\'m] in/, 'yes', 'confirm'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+controller.hears([/[i\'m] in/], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
-    bot.reply(message, `${getLunch()} is on the way ;)`);
+    if (getConfirmed().indexOf('<@' + message.user + '>') >= 0) {
+      bot.reply(message, "You are already in");
+      return;
+    }
 
     bot.api.users.info({ user: message.user }, (error, response) => {
-        // user = response.user.id;
-        setConfirmed(response.user.name);
+        // TODO: validation for confirmed
+        setConfirmed(response.user.id);
+
         // TODO: list to display name and real name
-        bot.reply(message, 'CONFIRMED\n' + getConfirmed().join('\n'));
+        bot.reply(message, 'Thanks for confirming '+ response.user.name);
         //console.log('RESPONSE' + response);
-        console.log(util.inspect(response, false, null));
+        // console.log(util.inspect(response, false, null));
     });
 
 });
 
 // user declines
-controller.hears([/[i\'m] out/, 'no'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+controller.hears([/[i\'m] out/], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
-    // TODO remove user from group
+    bot.api.users.info({ user: message.user }, (error, response) => {
 
-    bot.reply(message, 'Perhaps you can join us tomorrow.');
+        // TODO: validation for delined
+        removedConfirmed(response.user.id);
+
+        // TODO: list to display name and real name
+        bot.reply(message, 'Sorry you declined '+ response.user.name);
+        //console.log('RESPONSE' + response);
+        // console.log(util.inspect(response, false, null));
+    });
 
 });
 
-// user checks for adminimistrator
+// user locates the administrator
 controller.hears(['admin'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
     bot.reply(message, `${getAdminName()} is the administrator for today's lunch.`);
 
 });
 
+// help session
 controller.hears(['help'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
     // TODO: validate if admin, show admin menu
@@ -234,3 +210,20 @@ controller.hears(['help'], ['direct_message', 'direct_mention', 'mention'], func
       }
      })
 });
+
+// ADMIN ONLY
+
+// admin gets confirmed list
+controller.hears(['list in'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+
+    // TODO: validate admin
+    // response.user.name
+
+    // TODO: list to display name and real name
+    bot.reply(message, `CONFIRMED\n ${getConfirmed().join('\n')}`);
+    //console.log('RESPONSE' + response);
+    // console.log(util.inspect(response, false, null));
+
+});
+
+// TODO: administrator clears session

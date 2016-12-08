@@ -51,19 +51,19 @@ const Storage = () => {
               case "organiser" : return {
                   "title" : "Organiser",
                   "value" : getAdminName(),
-                  "short" : true
+                  "short" : false
                 };
                 break;
               case "total" : return {
                   "title" : "Total Price so far",
                   "value" : `$${getPrice()*(getConfirmed().length+1)}`,
-                  "short" : true
+                  "short" : false
                 };
                 break;
               case "people" : return {
                   "title" : "People who are in",
                   "value" : getConfirmed().join(", "),
-                  "short" : true
+                  "short" : false
                 };
                 break;
               default : break;
@@ -75,20 +75,18 @@ const Storage = () => {
 
     const setConfirmed = (val) => confirmed.push('<@' + val + '>');
 
-    // TODO: setConfirmed
-    // if user is in the confirmed array, do nothing
-    // if user is in declined array, delete user from declined array
-    // push value to the confirmed array
-
     const getConfirmed = () => confirmed;
 
-    const setDeclined = (val) => declined.push('<@' + val + '>');
-    // TODO: setDeclined
-    // if user is in the declined array, do nothing
-    // if user is in declined array, delete user from declined array
-    // push value to the declined array
+    const removedConfirmed = (val) => {
 
-    const getDeclined = () => declined;
+      console.log(confirmed)
+
+      confirmed = confirmed.filter( (v) => {
+        return v !== '<@' + val + '>'
+      } )
+    }
+
+      //  confirmed.splice(confirmed.indexOf('<@' + val + '>'), 1) }
 
     return {
         setAdminID,
@@ -106,8 +104,7 @@ const Storage = () => {
         printMenu,
         setConfirmed,
         getConfirmed,
-        setDeclined,
-        getDeclined,
+        removedConfirmed,
     }
 };
 
