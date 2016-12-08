@@ -1,22 +1,22 @@
 const Botkit = require('botkit');
 const util = require('util')
 
-const LunchOrders = require('./slackchefbot_storage');
-const setAdminID = LunchOrders.setAdminID;
-const getAdminID = LunchOrders.getAdminID;
-const setAdminName = LunchOrders.setAdminName;
-const getAdminName = LunchOrders.getAdminName;
-const setChannelID = LunchOrders.setChannelID;
-const getChannelID = LunchOrders.getChannelID;
-const setLunch = LunchOrders.setLunch;
-const getLunch = LunchOrders.getLunch;
-const setPrice = LunchOrders.setPrice;
-const getPrice = LunchOrders.getPrice;
-const renderMenu = LunchOrders.renderMenu;
-const setConfirmed = LunchOrders.setConfirmed;
-const getConfirmed = LunchOrders.getConfirmed;
-const setDeclined = LunchOrders.setDeclined;
-const getDeclined = LunchOrders.getDeclined;
+const Storage = require('./slackchefbot_storage');
+const setAdminID = Storage.setAdminID;
+const getAdminID = Storage.getAdminID;
+const setAdminName = Storage.setAdminName;
+const getAdminName = Storage.getAdminName;
+const setChannelID = Storage.setChannelID;
+const getChannelID = Storage.getChannelID;
+const setLunch = Storage.setLunch;
+const getLunch = Storage.getLunch;
+const setPrice = Storage.setPrice;
+const getPrice = Storage.getPrice;
+const renderMenu = Storage.renderMenu;
+const setConfirmed = Storage.setConfirmed;
+const getConfirmed = Storage.getConfirmed;
+const setDeclined = Storage.setDeclined;
+const getDeclined = Storage.getDeclined;
 
 // TODO: add module for NLP - wit.au
 // TODO: integrate database
@@ -43,7 +43,7 @@ controller.on('bot_channel_join', function (bot, message) {
 })
 
 // initiates administator access
-controller.hears(['i am the administrator'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+controller.hears(['set admin'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
     // TODO: check for existing administrator and block other users from overriding
 
@@ -69,28 +69,31 @@ controller.hears(['i am the administrator'], ['direct_message', 'direct_mention'
                     setPrice(response.text);
                     convo.next();
 
-                    convo.say(renderMenu());
+                    convo.say(
+                      renderMenu() +
+                      `\n`
+                    );
 
                     convo.ask('Please enter yes to confirm or the number to change.', [
                     // TODO: loop for confirmation
-                    //{
-                    //    pattern: '1',
-                    //    callback: function (response, convo) {
-                    //        convo.ask('Enter today\'s lunch item.', function (response, convo) {
-                    //            setLunch(response.text);
-                    //            convo.next();
-                    //            convo.say(renderMenu());
-                    //        })
-                    //        //convo.say('testing');
-                    //    }
-                    //},
-                    //{
-                    //    pattern: '2',
-                    //    callback: function (response, convo) {
-                    //        convo.say('Bye!');
-                    //
-                    //    }
-                    //},
+                    {
+                       pattern: '1',
+                       callback: function (response, convo) {
+                           convo.ask('Enter today\'s lunch item.', function (response, convo) {
+                               setLunch(response.text);
+                               convo.next();
+                               convo.say(renderMenu());
+                           })
+                           //convo.say('testing');
+                       }
+                    },
+                    {
+                       pattern: '2',
+                       callback: function (response, convo) {
+                           convo.say('Bye!');
+
+                       }
+                    },
                     {
                         pattern: 'yes',
                         callback: function (response, convo) {
@@ -134,10 +137,11 @@ controller.hears(['send'], ['direct_message', 'direct_mention', 'mention'], func
 controller.hears(['hello'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
     // TODO: bot says helo and prints commands.
     // if there is an administrator, send details
-    // TEST
-    bot.reply(message,  getLunch());
-    bot.reply(message, 'Hi.');
-    bot.reply(message, `${getAdminName()} is the administrator for today's lunch`);
+    bot.reply(message,
+      `Hi there. <@slackchefbot_duyen> is a lunch service.
+      You can opt in or opt out of group lunches.
+      Type \`help\` any time to see what's possible.`
+    );
 
 });
 
@@ -165,56 +169,87 @@ controller.hears([/[i\'m] in/], ['direct_message', 'direct_mention', 'mention'],
 });
 
 // user declines
-// controller.hears([/[i\'m] out/], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
-//
-//     bot.api.users.info({ user: message.user }, (error, response) => {
-//
-//         // TODO: validation for delined
-//         setDeclined(response.user.name);
-//
-//         // TODO: list to display name and real name
-//         bot.reply(message, 'Sorry you declined '+ response.user.name);
-//         //console.log('RESPONSE' + response);
-//         // console.log(util.inspect(response, false, null));
-//     });
-//
-// });
+controller.hears([/[i\'m] out/], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+
+    bot.api.users.info({ user: message.user }, (error, response) => {
+
+        // TODO: validation for delined
+        setDeclined(response.user.name);
+
+        // TODO: list to display name and real name
+        bot.reply(message, 'Sorry you declined '+ response.user.name);
+        //console.log('RESPONSE' + response);
+        // console.log(util.inspect(response, false, null));
+    });
+
+});
 
 // user locates the administrator
-// controller.hears(['admin'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+controller.hears(['admin'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+
+    bot.reply(message, `${getAdminName()} is the administrator for today's lunch.`);
+
+});
+
+// controller.hears(['help'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 //
-//     bot.reply(message, `${getAdminName()} is the administrator for today's lunch.`);
+//     // TODO: validate if admin, show admin menu
+//     bot.reply(
+//       message,
+//       `Hi <@${message.user}>, thanks for organising today's lunch!\n
+//       You're commands are':\n
+//       \`menu\` - see today's menu\n
+//       \`change lunch\` - change the lunch item\n
+//       \`change price\`\n
+//       \`change image url\`\n
+//       \`send menu\` - send the menu to the channel\n
+//       \`list in\` - see all confirmed lunchers\n
+//       \`list out\` - see all declined lunchers\n
+//       Type \`help\` any time to see this list again.`
+//     );
+//
+//     // else
+//     bot.reply(
+//       message,
+//       `Hi <@${message.user}>! You can:
+//         \`menu\` - see today's menu
+//         \`i'm in\` - opt in for lunch
+//         \`i'm out\` - opt out for lunch
+//         \`list in\` - see all confirmed lunchers
+//         \`list out\` - see all declined lunchers
+//         Type \`help\` any time to see this list again.`
+//     );
 //
 // });
 
 
-// // ADMIN ONLY
+// ADMIN ONLY
 
 // admin gets confirmed list
-// controller.hears(['list in'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
-//
-//     // TODO: validate admin
-//     // response.user.name
-//
-//     // TODO: list to display name and real name
-//     bot.reply(message, `CONFIRMED\n ${getConfirmed().join('\n')}`);
-//     //console.log('RESPONSE' + response);
-//     // console.log(util.inspect(response, false, null));
-//
-// });
-//
-// // admin gets declined list
-// controller.hears(['list out'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
-//
-//   // TODO: validate admin
-//   // response.user.name
-//
-//     // TODO: list to display name and real name
-//     bot.reply(message, `DECLINED\n ${getDeclined().join('\n')}`);
-//     //console.log('RESPONSE' + response);
-//     // console.log(util.inspect(response, false, null));
-//
-// });
-//
-//
-// // TODO: administrator clears session
+controller.hears(['list in'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+
+    // TODO: validate admin
+    // response.user.name
+
+    // TODO: list to display name and real name
+    bot.reply(message, `CONFIRMED\n ${getConfirmed().join('\n')}`);
+    //console.log('RESPONSE' + response);
+    // console.log(util.inspect(response, false, null));
+
+});
+
+// admin gets declined list
+controller.hears(['list out'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+
+  // TODO: validate admin
+  // response.user.name
+
+    // TODO: list to display name and real name
+    bot.reply(message, `DECLINED\n ${getDeclined().join('\n')}`);
+    //console.log('RESPONSE' + response);
+    // console.log(util.inspect(response, false, null));
+
+});
+
+
+// TODO: administrator clears session
