@@ -1,1 +1,1 @@
-select * from sessions;
+select username from sessions where username = $1;

@@ -1,13 +1,14 @@
 
 const Botkit = require('botkit');
 const util = require('util');
-// const db = require('./db');
 
 var provider = require('./provider')
 
 var sql = require('./sql').sessions;
 
-// db.any("select * from sessions where id=$1", [1])
+////tester ---- ----- 
+//const db = require('./db');
+// db.any("select * from sessions where username=$1", ['duyen'])
 //     .then(function (data) {
 //         console.log("Slack Usrer ID:", data[0].slack_id);
 //     })
@@ -16,8 +17,10 @@ var sql = require('./sql').sessions;
 //     })
 //     .finally(db.end); // for immediate app exit, closing the connection pool.
 
-// console.log(provider.findUser());
-provider.addSession('xyz123', 'duyen');
+// console.log(provider.findUser('mallabonikki'));
+
+// provider.addSession('xyz123', 'duyen');
+
 
 
 
