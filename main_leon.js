@@ -18,6 +18,7 @@ const printMenu = Storage.printMenu;
 const setConfirmed = Storage.setConfirmed;
 const getConfirmed = Storage.getConfirmed;
 const removedConfirmed = Storage.removedConfirmed;
+const resetLunch = Storage.resetLunch;
 
 
 // TODO: add module for NLP - wit.au
@@ -227,3 +228,8 @@ controller.hears(['list in'], ['direct_message', 'direct_mention', 'mention'], f
 });
 
 // TODO: administrator clears session
+controller.hears(['end session'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+  bot.reply(message, printMenu("organiser lunch price people total"));
+  resetLunch();
+
+}

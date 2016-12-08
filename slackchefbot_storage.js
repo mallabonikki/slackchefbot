@@ -86,6 +86,16 @@ const Storage = () => {
       } )
     }
 
+    const resetLunch = () => {
+      adminID = '';
+      adminName = '';
+      channelID = '';
+      lunch = '';
+      price = '';
+
+      confirmed = [];
+    }
+
     return {
         setAdminID,
         getAdminID,
@@ -103,6 +113,7 @@ const Storage = () => {
         setConfirmed,
         getConfirmed,
         removedConfirmed,
+        resetLunch
     }
 };
 
