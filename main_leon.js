@@ -51,7 +51,7 @@ controller.hears(['set lunch (.*) set price (.*)'], ['direct_message', 'direct_m
     // }
 
 
-    bot.reply(message, menu());
+    bot.reply(message, menu("food price"));
     // TODO: add 'Please confirm? Y/N'
 
     bot.api.users.info({user: message.user}, (error, response) => {
@@ -199,4 +199,38 @@ controller.hears(['admin'], ['direct_message', 'direct_mention', 'mention'], fun
 
     bot.reply(message, `${getAdminName()} is the administrator for today's lunch.`);
 
+});
+
+controller.hears(['help'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+
+    // TODO: validate if admin, show admin menu
+
+    bot.api.users.info({user: message.user}, (error, response) => {
+      if (response.user.id === getAdminID()) {
+        bot.reply(
+          message,
+          `Hi <@${message.user}>, thanks for organising today's lunch!\n
+          You're commands are':\n
+          \`menu\` - see today's menu\n
+          \`change lunch\` - change the lunch item\n
+          \`change price\`\n
+          \`change image url\`\n
+          \`send menu\` - send the menu to the channel\n
+          \`list in\` - see all confirmed lunchers\n
+          \`list out\` - see all declined lunchers\n
+          Type \`help\` any time to see this list again.`
+        );
+      } else {
+        bot.reply(
+          message,
+          `Hi <@${message.user}>! You can:
+            \`menu\` - see today's menu
+            \`i'm in\` - opt in for lunch
+            \`i'm out\` - opt out for lunch
+            \`list in\` - see all confirmed lunchers
+            \`list out\` - see all declined lunchers
+            Type \`help\` any time to see this list again.`
+        );
+      }
+     })
 });
