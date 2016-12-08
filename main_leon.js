@@ -41,7 +41,17 @@ controller.hears(['set lunch (.*) set price (.*)'], ['direct_message', 'direct_m
     setLunch(message.match[1]);
     setPrice(message.match[2]);
 
-    bot.reply(message, `Today's menu is ${getLunch()} at $${getPrice()}.`);
+    // var menu = {
+    //   "attachments": [ {
+    //
+    //         "title" : getLunch(),
+    //         "title_link" : `https://www.google.com.au/#q=${getLunch()}`
+    //
+    //   }]
+    // }
+
+
+    bot.reply(message, menu());
     // TODO: add 'Please confirm? Y/N'
 
     bot.api.users.info({user: message.user}, (error, response) => {
@@ -63,9 +73,101 @@ controller.hears(['hello'], ['direct_message', 'direct_mention', 'mention'], fun
 // on today's menu
 controller.hears(['lunch', 'menu'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
     // TODO: check if user has confirmed. If yes, only send menu
-    bot.reply(message, `Today's menu is ${getLunch()} at $${getPrice()}. Are you in?`);
+
+
+    bot.reply(message, menu("total lunch price"));
 
 });
+
+function menu(options) {
+  var o = options.split(" ");
+
+  var menu = {
+    "attachments" : [ {
+        "fields" : processOptions(options)
+
+      }
+    ]
+
+  }
+  function processOptions(options) {
+  return options.split(" ").map(
+      (o) => { switch( o ) {
+        case "lunch" : return {
+            "title" : "Dish",
+            "value" : getLunch(),
+            "short" : true
+          };
+          break;
+        case "price" : return {
+            "title" : "Price",
+            "value" : `$${getPrice()}`,
+            "short" : true
+          };
+          break;
+        case "organiser" : return {
+            "title" : "Organiser",
+            "value" : getAdminName(),
+            "short" : true
+          };
+          break;
+        case "total" : return {
+            "title" : "Total Price so far",
+            "value" : `$${getPrice()*(getConfirmed().length+1)}`,
+            "short" : true
+          };
+          break;
+        case "people" : return {
+            "title" : "People who are in",
+            "value" : getConfirmed().join(", "),
+            "short" : true
+          };
+          break;
+        default : break;
+    } } )
+  }
+
+
+
+  // if (o.includes("lunch")) {
+  //   menu["attachments"][0]["fields"].push({
+  //       "title" : "Dish",
+  //       "value" : getLunch(),
+  //       "short" : true
+  //     });
+  // }
+  // if (o.includes("price")) {
+  //     menu["attachments"][0]["fields"].push({
+  //       "title" : "Price",
+  //       "value" : `$${getPrice()}`,
+  //       "short" : true
+  //     });
+  // }
+  // if (o.includes("organiser")) {
+  //   menu["attachments"][0]["fields"].push({
+  //       "title" : "Organiser",
+  //       "value" : getAdminName(),
+  //       "short" : true
+  //     });
+  // }
+  // if (o.includes("total")) {
+  //   menu["attachments"][0]["fields"].push({
+  //       "title" : "Total Price so far",
+  //       "value" : `$${getPrice()*(getConfirmed().length+1)}`,
+  //       "short" : true
+  //   });
+  // }
+  // if (o.includes("people")) {
+  //   menu["attachments"][0]["fields"].push({
+  //       "title" : "People who are in",
+  //       "value" : getConfirmed().join(", "),
+  //       "short" : false
+  //   });
+  // }
+
+  return menu
+
+}
 
 // user confirms
 controller.hears([/[i\'m] in/, 'yes', 'confirm'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
