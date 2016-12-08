@@ -227,3 +227,10 @@ controller.hears(['list in'], ['direct_message', 'direct_mention', 'mention'], f
 });
 
 // TODO: administrator clears session
+controller.hears(['end session'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+  bot.reply(message, printMenu("organiser lunch price people total"));
+  setAdminID('')
+  setAdminName('')
+  setChannelID('')
+
+}
