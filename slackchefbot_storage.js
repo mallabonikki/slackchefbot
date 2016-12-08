@@ -56,7 +56,7 @@ const Storage = () => {
                 break;
               case "total" : return {
                   "title" : "Total Price so far",
-                  "value" : `$${getPrice()*(getConfirmed().length+1)}`,
+                  "value" : `$${getPrice() * (getConfirmed().length + 1)}`,
                   "short" : false
                 };
                 break;

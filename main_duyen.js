@@ -225,12 +225,6 @@ controller.hears(['hello'], ['direct_message', 'direct_mention', 'mention'], fun
 
 });
 
-// on today's menu
-controller.hears(['lunch', 'menu'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
-    // TODO: validate if there is lunch and menu and print
-    bot.reply(message, `Today's menu is ${getLunch()} at $${getPrice()}. Are you in?`);
-
-});
 
 // user confirms
 controller.hears([/[i\'m] in/], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
@@ -255,6 +249,7 @@ controller.hears([/[i\'m] in/], ['direct_message', 'direct_mention', 'mention'],
 // user declines
 controller.hears([/[i\'m] out/], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
+    bot.reply(message, 'testing decline ');
     bot.api.users.info({ user: message.user }, (error, response) => {
 
         // TODO: validation for delined
@@ -283,7 +278,7 @@ controller.hears(['help'], ['direct_message', 'direct_mention', 'mention'], func
         bot.reply(
           message,
           `Hi <@${message.user}>, thanks for organising today's lunch!\n
-          You're commands are':\n
+          As the administrator, your commands are:\n
           \`menu\` to see today's menu\n
           \`change lunch\` to change the lunch item\n
           \`change price\` to change the price\n
@@ -294,11 +289,13 @@ controller.hears(['help'], ['direct_message', 'direct_mention', 'mention'], func
       } else {
         bot.reply(
           message,
-          `Hi <@${message.user}>! You can:
-            \`menu\` - see today's menu
-            \`i'm in\` - opt in for lunch
-            \`list in\` - see all confirmed lunchers
-            Type \`help\` any time to see this list again.`
+          `Hi <@${message.user}>!\n
+          Your commands are:\n
+          \`menu\` to see today's menu
+          \`i'm in\` to opt in for lunch
+          \`i'm out\` to opt out of lunch
+          \`list in\` to see all confirmed lunchers
+          Type \`help\` any time to see this list again.`
         );
       }
      })
