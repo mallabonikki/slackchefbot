@@ -86,7 +86,15 @@ const Storage = () => {
       } )
     }
 
-      //  confirmed.splice(confirmed.indexOf('<@' + val + '>'), 1) }
+    const resetLunch = () => {
+      adminID = '';
+      adminName = '';
+      channelID = '';
+      lunch = '';
+      price = '';
+
+      confirmed = [];
+    }
 
     return {
         setAdminID,
@@ -105,6 +113,7 @@ const Storage = () => {
         setConfirmed,
         getConfirmed,
         removedConfirmed,
+        resetLunch
     }
 };
 
