@@ -10,8 +10,10 @@
   "license": "ISC",
   "dependencies": {
     "beepboop-botkit": "^1.4.1",
+    "bluebird": "^3.4.6",
     "botkit": "^0.4.2",
     "botkit-storage-postgres": "^0.1.0",
-    "os": "^0.1.1"
+    "os": "^0.1.1",
+    "pg-promise": "^5.4.7"
   }
 }

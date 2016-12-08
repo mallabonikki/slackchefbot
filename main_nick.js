@@ -1,10 +1,64 @@
+
 const Botkit = require('botkit');
-const util = require('util')
+const util = require('util');
+const db = require('./db');
+
+// console.log(db.pgp.end())
+
+// var db = require('./db');
+// db.any("select * from tbSession")
+//     .then(function (data) {
+//         console.log("DATA:", data)
+//     })
+//     .catch(function (error) {
+//         console.log("Error:", error);
+//     })
+//     .finally(function () { 
+//         // pgp.end() 
+//     });
+
+// var promise = require('bluebird')
+// var options = { promiseLib: promise }
+// var pgp = require('pg-promise')(options)
+
+// db = pgp('postgres://Nic@localhost:3000/slackbotDB')
+
+// db.any("select * from tbSession").then(function (data){
+//     console.log(data)
+// });
+
+//--testing region-----
+
+// var promise = require('bluebird'); // or any other Promise/A+ compatible library;
+
+// var options = {
+//     promiseLib: promise // overriding the default (ES6 Promise);
+// };
+
+// var pgp = require('pg-promise')(options);
+// var cn= 'postgres://postgres@localhost:5432/slackbotDB';
+// var db = pgp(cn); // database instance;
+
+// NOTE: The default ES6 Promise doesn't have method `.finally`, but it is
+// available within Bluebird library used here as an example.
+
+db.any("select * from sessions")
+    .then(function (data) {
+        console.log("DATA:", data);
+    })
+    .catch(function (error) {
+        console.log("ERROR:", error);
+    })
+    .finally(db.end); // for immediate app exit, closing the connection pool.
+//----end of testing region
+
+
+
 const { setAdminID, getAdminID, setAdminName, getAdminName, setLunch, getLunch,
         setPrice, getPrice,
         //setGroup, getGroup,
         setConfirmed, getConfirmed,
-        //setDeclined, getDeclined,
+        //setDeclined, getDeclined
         getMenu } = require('./slackchefbot_storage');
 
 // TODO: add module for NLP - wit.au
@@ -14,7 +68,7 @@ const { setAdminID, getAdminID, setAdminName, getAdminName, setLunch, getLunch,
 // TODO: test live in-memory storage
 
 
-const token = process.env.SLACK_TOKEN;
+const token = process.env.SLACKBOT_TOKEN;
 
 const controller = Botkit.slackbot({
     // reconnects to Slack RTM after failed connection
@@ -42,6 +96,11 @@ controller.hears(['set lunch (.*) set price (.*)'], ['direct_message', 'direct_m
     setLunch(message.match[1]);
     setPrice(message.match[2]);
 
+    console.log(message.match[1]); 
+    console.log(message.match[2]);
+
+    //
+
     bot.reply(message, `Today's menu is ${getLunch()} at $${getPrice()}.`);
     // TODO: add 'Please confirm? Y/N'
 
@@ -65,6 +124,11 @@ controller.hears(['hello'], ['direct_message', 'direct_mention', 'mention'], fun
 controller.hears(['lunch', 'menu'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
     // TODO: check if user has confirmed. If yes, only send menu
     bot.reply(message, `Today's menu is ${getLunch()} at $${getPrice()}. Are you in?`);
+
+    //---- insert data to database --------
+
+
+    debugger
 
 });
 
