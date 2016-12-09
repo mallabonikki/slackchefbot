@@ -172,7 +172,6 @@ controller.hears(['send menu'], ['direct_message', 'direct_mention', 'mention'],
 
       var menu = printMenu("organiser lunch price");
       menu["channel"] = getChannelID();
-      menu["attachments"][0]['fallback'] = `Organiser: ${getAdminName()} Dish: ${getLunch()} Price: ${getPrice()}`;
       menu["text"] = `*Lunch for Today*\n
       Type:\n
       \`i'm in\` to join us\n
