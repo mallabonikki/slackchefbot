@@ -50,13 +50,13 @@ const Storage = () => {
                 break;
               case "organiser" : return {
                   "title" : "Organiser",
-                  "value" : getAdminName(),
+                  "value" : `<@${getAdminID()}>`,
                   "short" : false
                 };
                 break;
               case "total" : return {
                   "title" : "Total Price so far",
-                  "value" : `$${getPrice()*(getConfirmed().length+1)}`,
+                  "value" : `$${getPrice() * (getConfirmed().length + 1)}`,
                   "short" : false
                 };
                 break;
@@ -86,6 +86,16 @@ const Storage = () => {
       } )
     }
 
+    const resetLunch = () => {
+      adminID = '';
+      adminName = '';
+      channelID = '';
+      lunch = '';
+      price = '';
+
+      confirmed = [];
+    }
+
     return {
         setAdminID,
         getAdminID,
@@ -103,6 +113,7 @@ const Storage = () => {
         setConfirmed,
         getConfirmed,
         removedConfirmed,
+        resetLunch
     }
 };
 
