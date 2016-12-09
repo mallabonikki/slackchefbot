@@ -1,5 +1,7 @@
 const Botkit = require('botkit');
-const util = require('util')
+const util = require('util');
+var provider = require('./provider');
+var sql = require('./sql').sessions;
 
 const Storage = require('./slackchefbot_storage');
 const setAdminID = Storage.setAdminID;
@@ -24,7 +26,7 @@ const removedConfirmed = Storage.removedConfirmed;
 // TODO: integrate database
 
 
-const token = process.env.SLACK_TOKEN;
+const token = process.env.SLACKBOT_TOKEN;
 
 const controller = Botkit.slackbot({
     // reconnects to Slack RTM after failed connection
@@ -56,9 +58,10 @@ controller.hears(['set admin'], ['direct_message', 'direct_mention', 'mention'],
 
     // send administrator details to storage
     bot.api.users.info({ user: message.user }, (error, response) => {
-        setAdminID(response.user.id);
-        setAdminName(response.user.name);
-        setChannelID(message.channel);
+        provider.addSession(response.user.id, response.user.name);
+        // setAdminID(response.user.id);
+        // setAdminName(response.user.name);
+        // setChannelID(message.channel);
         bot.reply(message, getAdminName() + ' is currently setting up today\'s lunch.');
     });
 
@@ -171,8 +174,16 @@ controller.hears([/[i\'m] out/], ['direct_message', 'direct_mention', 'mention']
 
 // user locates the administrator
 controller.hears(['admin'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+    
+    bot.api.users.info({ user: message.user }, (error, response) => {
+        provider.addSession(response.user.id, message.text, response.user.team_id, response.user.name);
+    })
 
-    bot.reply(message, `${getAdminName()} is the administrator for today's lunch.`);
+    provider.findUser(message.user)
+        .then(function(data) {
+            bot.reply(message, data[0].reply + " is the administrator for today's lunch.");
+        })
+
 
 });
 
@@ -226,3 +237,4 @@ controller.hears(['list in'], ['direct_message', 'direct_mention', 'mention'], f
 
 });
 
+// TODO: administrator clears session
