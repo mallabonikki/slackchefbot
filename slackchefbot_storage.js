@@ -50,7 +50,7 @@ const Storage = () => {
                 break;
               case "organiser" : return {
                   "title" : "Organiser",
-                  "value" : `@${getAdminName()}`,
+                  "value" : `<@${getAdminID()}>`,
                   "short" : false
                 };
                 break;
