@@ -45,24 +45,23 @@ controller.on('bot_channel_join', function (bot, message) {
     bot.reply(message, 'Let\'s lunch people.')
 })
 
-
-// ADMIN ONLY
-
-// to initiate administator access
+// initiates administator access
 controller.hears(['set admin'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
-    // checks for existing administrator and blocks other users from overriding
+    // TODO: check for existing administrator and block other users from overriding
     if (getAdminName() !== '' || getAdminID() !== '') {
       bot.reply(message, "You can't make a new lunch order while someone else is.");
       return;
     }
 
-    // sends new administrator details to storage
+
+    // send administrator details to storage
     bot.api.users.info({ user: message.user }, (error, response) => {
         setAdminID(response.user.id);
         setAdminName(response.user.name);
         setChannelID(message.channel);
-        bot.reply(message, '<@' + getAdminName() + '> is currently setting up today\'s lunch.');
+        setConfirmed(getAdminID())
+        bot.reply(message, getAdminName() + ' is currently setting up today\'s lunch.');
     });
 
     setTimeout(function () {
@@ -75,24 +74,25 @@ controller.hears(['set admin'], ['direct_message', 'direct_mention', 'mention'],
                 convo.next();
 
                 // set price
-                convo.ask('Set the price.', function (response, convo) {
-                    setPrice(response.text);
+                convo.ask('Set the price:', function (response, convo) {
+                    setPrice(parseFloat(response.text).toFixed(2));
                     convo.next();
 
                     // displays menu to admin
-                    let menu  = printMenu('lunch price')
-                    menu['text'] = 'This is the menu that will be sent to the channel:'
+                    let menu  = printMenu("lunch price")
+                    menu["text"] = "This is the menu that will be sent to the channel:"
 
                     bot.reply(message,
                       menu
                     );
 
-                    // lists admin options
+
+
                     convo.say(
                       `To make further changes: \n
                       \`change lunch\` to change the lunch item\n
                       \`change price\` to change the price of the lunch\n
-                      \`send menu\` to send the menu to the channel`)
+                      \`send menu\` to send the menu to the channel`);
                 });
             });
 
@@ -127,8 +127,6 @@ controller.hears(['change lunch'], ['direct_message', 'direct_mention', 'mention
 
         });
       });
-
-      // ------- NEEDS TESTING -------
     } else {
       bot.reply(message, 'You do not have access to make these changes')
     }
@@ -161,32 +159,24 @@ controller.hears(['change price'], ['direct_message', 'direct_mention', 'mention
 
         });
       });
-
-      // ------- NEEDS TESTING -------
     } else {
       bot.reply(message, 'You do not have access to make these changes')
     }
 
 });
 
-
 controller.hears(['send menu'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+    // console.log(message);
 
     if (message.user === getAdminID()) {
 
       var menu = printMenu("organiser lunch price");
       menu["channel"] = getChannelID();
       menu["attachments"][0]['fallback'] = `Organiser: ${getAdminName()} Dish: ${getLunch()} Price: ${getPrice()}`;
-      menu["text"] = `Type:\n
+      menu["text"] = `*Lunch for Today*\n
+      Type:\n
       \`i'm in\` to join us\n
-      \`i'm in\` to decline or change your mind.`
-
-      // TODO: Preface the menu
-      // On the menu for Slack Lunch today, we have:
-      // menu
-      // Type:
-      // `i'm in` to join us
-      // `i'm in` to decline or change your mind
+      \`i'm in\` to decline or change your mind.`;
 
       // send menu to the channel
       bot.say(
@@ -196,22 +186,6 @@ controller.hears(['send menu'], ['direct_message', 'direct_mention', 'mention'],
     } else {
       bot.reply(message, 'You do not have access')
     }
-
-});
-
-// gets the confirmed list - available to ADMIN & USERS
-controller.hears(['list in'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
-
-    // TODO change this list - LEON
-    bot.reply(message, `CONFIRMED\n ${getConfirmed().join('\n')}`);
-
-});
-
-// clears the session
-controller.hears(['end session'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
-  bot.reply(message, printMenu("organiser lunch price people total"));
-  resetLunch();
-
 });
 
 
@@ -228,6 +202,12 @@ controller.hears(['hello'], ['direct_message', 'direct_mention', 'mention'], fun
 
 });
 
+// on today's menu
+controller.hears(['lunch', 'menu'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+    menu = printMenu("organiser lunch price")
+    bot.reply(message, menu);
+
+});
 
 // user confirms
 controller.hears([/[i\'m] in/], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
@@ -237,14 +217,15 @@ controller.hears([/[i\'m] in/], ['direct_message', 'direct_mention', 'mention'],
       return;
     }
 
+    if (getLunch() === '' || getPrice() === '' || getPrice() === NaN) {
+      bot.reply(message, `The lunch order has not yet been set`);
+      return;
+    }
+
     bot.api.users.info({ user: message.user }, (error, response) => {
-        // TODO: validation for confirmed
         setConfirmed(response.user.id);
 
-        // TODO: list to display name and real name
         bot.reply(message, 'Thanks for confirming '+ response.user.name);
-        //console.log('RESPONSE' + response);
-        // console.log(util.inspect(response, false, null));
     });
 
 });
@@ -252,16 +233,10 @@ controller.hears([/[i\'m] in/], ['direct_message', 'direct_mention', 'mention'],
 // user declines
 controller.hears([/[i\'m] out/], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
-    bot.reply(message, 'testing decline ');
     bot.api.users.info({ user: message.user }, (error, response) => {
-
-        // TODO: validation for delined
         removedConfirmed(response.user.id);
 
-        // TODO: list to display name and real name
         bot.reply(message, 'Sorry you declined '+ response.user.name);
-        //console.log('RESPONSE' + response);
-        // console.log(util.inspect(response, false, null));
     });
 
 });
@@ -273,8 +248,10 @@ controller.hears(['admin'], ['direct_message', 'direct_mention', 'mention'], fun
 
 });
 
-// help
+// help session
 controller.hears(['help'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+
+    // TODO: validate if admin, show admin menu
 
     bot.api.users.info({user: message.user}, (error, response) => {
       if (response.user.id === getAdminID()) {
@@ -302,4 +279,20 @@ controller.hears(['help'], ['direct_message', 'direct_mention', 'mention'], func
         );
       }
      })
+});
+
+// gets the confirmed list - available to ADMIN & USERS
+controller.hears(['list in'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+
+    bot.reply(message, printMenu("people"));
+
+});
+
+// ADMIN ONLY
+
+// administrator clears session
+controller.hears(['end session'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+  bot.reply(message, printMenu("organiser lunch price people total"));
+  resetLunch();
+
 });
