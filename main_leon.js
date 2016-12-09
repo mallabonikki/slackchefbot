@@ -296,3 +296,7 @@ controller.hears(['end session'], ['direct_message', 'direct_mention', 'mention'
   resetLunch();
 
 });
+
+controller.hears([''], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+  bot.reply(message, printMenu("Sorry, I don't understand what you're saying."));
+});
