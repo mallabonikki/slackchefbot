@@ -177,6 +177,9 @@ controller.hears(['send menu'], ['direct_message', 'direct_mention', 'mention'],
       var menu = printMenu("organiser lunch price");
       menu["channel"] = getChannelID();
       menu["attachments"][0]['fallback'] = `Organiser: ${getAdminName()} Dish: ${getLunch()} Price: ${getPrice()}`;
+      menu["text"] = `Type:\n
+      \`i'm in\` to join us\n
+      \`i'm in\` to decline or change your mind.`
 
       // TODO: Preface the menu
       // On the menu for Slack Lunch today, we have:
