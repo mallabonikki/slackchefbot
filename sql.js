@@ -8,8 +8,10 @@ function sql(file) {
 
 module.exports = {
     sessions: {
-        add: sql('sql/sessions/create.sql'),
-        search: sql('sql/sessions/search.sql')
+        add: sql('./sql/sessions/create.sql'),
+        search: sql('./sql/sessions/search.sql'),
+        update: sql('./sql/sessions/update.sql'),
+        delete: sql('./sql/sessions/delete.sql')
     }
 };
 

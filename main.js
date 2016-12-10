@@ -25,7 +25,7 @@ const resetLunch = Storage.resetLunch;
 // TODO: integrate database
 
 
-const token = process.env.SLACK_TOKEN;
+const token = process.env.SLACKBOT_TOKEN;
 
 const controller = Botkit.slackbot({
     // reconnects to Slack RTM after failed connection

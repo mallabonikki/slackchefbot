@@ -1,7 +1,7 @@
 const Botkit = require('botkit');
-const util = require('util');
-var provider = require('./provider');
-var sql = require('./sql').sessions;
+const util = require('util')
+const provider = require('./provider')
+
 
 const Storage = require('./slackchefbot_storage');
 const setAdminID = Storage.setAdminID;
@@ -20,6 +20,7 @@ const printMenu = Storage.printMenu;
 const setConfirmed = Storage.setConfirmed;
 const getConfirmed = Storage.getConfirmed;
 const removedConfirmed = Storage.removedConfirmed;
+const resetLunch = Storage.resetLunch;
 
 
 // TODO: add module for NLP - wit.au
@@ -50,19 +51,13 @@ controller.on('bot_channel_join', function (bot, message) {
 controller.hears(['set admin'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
     // TODO: check for existing administrator and block other users from overriding
-    if (getAdminName() !== '' || getAdminID() !== '') {
-      bot.reply(message, "You can't make a new lunch order while someone else is.");
-      return;
-    }
+    // if (getAdminName() !== '' || getAdminID() !== '') {
+    //   bot.reply(message, "You can't make a new lunch order while someone else is.");
+    //   return;
+    // }
 
-
-    // send administrator details to storage
-    bot.api.users.info({ user: message.user }, (error, response) => {
-        provider.addSession(response.user.id, response.user.name);
-        // setAdminID(response.user.id);
-        // setAdminName(response.user.name);
-        // setChannelID(message.channel);
-        bot.reply(message, getAdminName() + ' is currently setting up today\'s lunch.');
+    provider.addSession(message.user).catch(function (error) {
+        console.log(error)
     });
 
     setTimeout(function () {
@@ -72,14 +67,27 @@ controller.hears(['set admin'], ['direct_message', 'direct_mention', 'mention'],
             // set lunch
             convo.ask('What\'s today\'s lunch item?', function (response, convo) {
                 setLunch(response.text);
+                
+                var lunchToday = response.text
+                provider.updateSession(lunchToday, 0, message.user).catch(function (error) {
+                    console.log(error);
+                });
+
                 convo.next();
 
+
                 // set price
-                convo.ask('Set the price.', function (response, convo) {
-                    setPrice(response.text);
+                convo.ask('Set the price:', function (response, convo) {
+                    setPrice(parseFloat(response.text).toFixed(2));
+
+                    provider.updateSession(lunchToday,response.text, message.user).catch(function (error) {
+                        console.log(error);
+                    });
+
                     convo.next();
+                    // provider.updateSession('.', response.text, message.user)
 
-
+                    // displays menu to admin
                     let menu  = printMenu("lunch price")
                     menu["text"] = "This is the menu that will be sent to the channel:"
 
@@ -93,7 +101,7 @@ controller.hears(['set admin'], ['direct_message', 'direct_mention', 'mention'],
                       `To make further changes: \n
                       \`change lunch\` to change the lunch item\n
                       \`change price\` to change the price of the lunch\n
-                      \`send menu\` - send the menu to the channel`)
+                      \`send menu\` to send the menu to the channel`);
                 });
             });
 
@@ -101,18 +109,107 @@ controller.hears(['set admin'], ['direct_message', 'direct_mention', 'mention'],
     }, 1000);
 });
 
+controller.hears(['db delete'], ['direct_message', 'direct_mention',], function (bot, message) { 
+    provider.deleteSession().catch(function (error) { 
+        console.log('Error deleting session: ' + error  )
+     });
+    bot.reply(message, 'Session Deleted');
+});
+
+controller.hears(['db'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+    provider.findUser(message.user).then(function (data) {
+        bot.reply(message, data[0].lunch + " " + data[0].price.toString());
+    }).catch(function (error) { 
+        if (TypeError) bot.reply(message, 'Session Data is empty');        
+     });
+});
+
+// change options
+controller.hears(['change lunch'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+
+    if (message.user === getAdminID()) {
+      // sets new lunch
+      bot.startPrivateConversation(message, function (err, convo) {
+        convo.ask('Enter the new lunch item:', function (response, convo) {
+            setLunch(response.text);
+            convo.next();
+
+            // displays menu to admin
+            let menu  = printMenu('lunch price')
+            menu['text'] = 'Here\'s the amended menu:'
+
+            bot.reply(message,
+              menu
+            )
+
+            // lists admin options
+            convo.say(
+              `Type: \n
+              \`send menu\` to send the menu to the channel\n
+              \`change lunch\` to change the lunch item\n
+              \`change price\` to change the price of the lunch`);
+
+        });
+      });
+    } else {
+      bot.reply(message, 'You do not have access to make these changes')
+    }
+
+});
+
+controller.hears(['change price'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+
+    if (message.user === getAdminID()) {
+      // sets new price
+      bot.startPrivateConversation(message, function (err, convo) {
+        convo.ask('Enter the new price:', function (response, convo) {
+            setPrice(response.text);
+            convo.next();
+
+            // displays menu to admin
+            let menu  = printMenu('lunch price')
+            menu['text'] = 'Here\'s the amended menu:'
+
+            bot.reply(message,
+              menu
+            )
+
+            // lists admin options
+            convo.say(
+              `Type: \n
+              \`send menu\` to send the menu to the channel\n
+              \`change lunch\` to change the lunch item\n
+              \`change price\` to change the price of the lunch`);
+
+        });
+      });
+    } else {
+      bot.reply(message, 'You do not have access to make these changes')
+    }
+
+});
+
 controller.hears(['send menu'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
     // console.log(message);
 
-    // TODO: validate admin
-    var menu = printMenu("organiser food price");
-    menu["channel"] = getChannelID();
-    menu["attachments"][0]['fallback'] = `Organiser: ${getAdminName()} Dish: ${getLunch()} Price: ${getPrice()}`;
+    if (message.user === getAdminID()) {
 
-    // send menu to the channel
-    bot.say(
-        menu
-    );
+      var menu = printMenu("organiser lunch price");
+      menu["channel"] = getChannelID();
+      menu["attachments"][0]['fallback'] = `Organiser: ${getAdminName()} Dish: ${getLunch()} Price: ${getPrice()}`;
+      menu["text"] = `*Lunch for Today*\n
+      Type:\n
+      \`i'm in\` to join us\n
+      \`i'm out\` to decline or change your mind.`;
+
+      // send menu to the channel
+      bot.say(
+          menu
+      );
+
+    } else {
+      bot.reply(message, 'You do not have access')
+    }
 });
 
 
@@ -131,8 +228,8 @@ controller.hears(['hello'], ['direct_message', 'direct_mention', 'mention'], fun
 
 // on today's menu
 controller.hears(['lunch', 'menu'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
-    // TODO: check if user has confirmed. If yes, only send menu
-    bot.reply(message, `Today's menu is ${getLunch()} at $${getPrice()}. Are you in?`);
+    menu = printMenu("organiser lunch price")
+    bot.reply(message, menu);
 
 });
 
@@ -144,14 +241,15 @@ controller.hears([/[i\'m] in/], ['direct_message', 'direct_mention', 'mention'],
       return;
     }
 
+    if (getLunch() === '' || getPrice() === '' || getPrice() === NaN) {
+      bot.reply(message, `The lunch order has not yet been set`);
+      return;
+    }
+
     bot.api.users.info({ user: message.user }, (error, response) => {
-        // TODO: validation for confirmed
         setConfirmed(response.user.id);
 
-        // TODO: list to display name and real name
         bot.reply(message, 'Thanks for confirming '+ response.user.name);
-        //console.log('RESPONSE' + response);
-        // console.log(util.inspect(response, false, null));
     });
 
 });
@@ -160,30 +258,17 @@ controller.hears([/[i\'m] in/], ['direct_message', 'direct_mention', 'mention'],
 controller.hears([/[i\'m] out/], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
     bot.api.users.info({ user: message.user }, (error, response) => {
-
-        // TODO: validation for delined
         removedConfirmed(response.user.id);
 
-        // TODO: list to display name and real name
         bot.reply(message, 'Sorry you declined '+ response.user.name);
-        //console.log('RESPONSE' + response);
-        // console.log(util.inspect(response, false, null));
     });
 
 });
 
 // user locates the administrator
 controller.hears(['admin'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
-    
-    bot.api.users.info({ user: message.user }, (error, response) => {
-        provider.addSession(response.user.id, message.text, response.user.team_id, response.user.name);
-    })
-
-    provider.findUser(message.user)
-        .then(function(data) {
-            bot.reply(message, data[0].reply + " is the administrator for today's lunch.");
-        })
-
+    provider.addSession(message.user);
+    bot.reply(message, `${getAdminName()} is the administrator for today's lunch.`);
 
 });
 
@@ -197,44 +282,41 @@ controller.hears(['help'], ['direct_message', 'direct_mention', 'mention'], func
         bot.reply(
           message,
           `Hi <@${message.user}>, thanks for organising today's lunch!\n
-          You're commands are':\n
-          \`menu\` - see today's menu\n
-          \`change lunch\` - change the lunch item\n
-          \`change price\`\n
-          \`change image url\`\n
-          \`send menu\` - send the menu to the channel\n
-          \`list in\` - see all confirmed lunchers\n
-          \`list out\` - see all declined lunchers\n
+          As the administrator, your commands are:\n
+          \`menu\` to see today's menu\n
+          \`change lunch\` to change the lunch item\n
+          \`change price\` to change the price\n
+          \`send menu\` to send the menu to the channel\n
+          \`list in\` to see confirmed lunchers\n
           Type \`help\` any time to see this list again.`
         );
       } else {
         bot.reply(
           message,
-          `Hi <@${message.user}>! You can:
-            \`menu\` - see today's menu
-            \`i'm in\` - opt in for lunch
-            \`i'm out\` - opt out for lunch
-            \`list in\` - see all confirmed lunchers
-            \`list out\` - see all declined lunchers
-            Type \`help\` any time to see this list again.`
+          `Hi <@${message.user}>!\n
+          Your commands are:\n
+          \`menu\` to see today's menu
+          \`i'm in\` to opt in for lunch
+          \`i'm out\` to opt out of lunch
+          \`list in\` to see all confirmed lunchers
+          Type \`help\` any time to see this list again.`
         );
       }
      })
 });
 
-// ADMIN ONLY
-
-// admin gets confirmed list
+// gets the confirmed list - available to ADMIN & USERS
 controller.hears(['list in'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
 
-    // TODO: validate admin
-    // response.user.name
-
-    // TODO: list to display name and real name
-    bot.reply(message, `CONFIRMED\n ${getConfirmed().join('\n')}`);
-    //console.log('RESPONSE' + response);
-    // console.log(util.inspect(response, false, null));
+    bot.reply(message, printMenu("people"));
 
 });
 
-// TODO: administrator clears session
+// ADMIN ONLY
+
+// administrator clears session
+controller.hears(['end session'], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+  bot.reply(message, printMenu("organiser lunch price people total"));
+  resetLunch();
+
+});
