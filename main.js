@@ -172,11 +172,11 @@ controller.hears(['send menu'], ['direct_message', 'direct_mention', 'mention'],
 
       var menu = printMenu("organiser lunch price");
       menu["channel"] = getChannelID();
-      menu["attachments"][0]['fallback'] = `Organiser: ${getAdminName()} Dish: ${getLunch()} Price: ${getPrice()}`;
+      // menu["attachments"][0]['fallback'] = `Organiser: ${getAdminName()} Dish: ${getLunch()} Price: ${getPrice()}`;
       menu["text"] = `*Lunch for Today*\n
       Type:\n
       \`i'm in\` to join us\n
-      \`i'm in\` to decline or change your mind.`;
+      \`i'm out\` to decline or change your mind.`;
 
       // send menu to the channel
       bot.say(
@@ -287,6 +287,12 @@ controller.hears(['list in'], ['direct_message', 'direct_mention', 'mention'], f
     bot.reply(message, printMenu("people"));
 
 });
+
+// bot doesn't understand command
+controller.hears([''], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+  bot.reply(message, "Sorry, I don't understand what you're saying.");
+});
+
 
 // ADMIN ONLY
 

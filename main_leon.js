@@ -172,7 +172,6 @@ controller.hears(['send menu'], ['direct_message', 'direct_mention', 'mention'],
 
       var menu = printMenu("organiser lunch price");
       menu["channel"] = getChannelID();
-      menu["attachments"][0]['fallback'] = `Organiser: ${getAdminName()} Dish: ${getLunch()} Price: ${getPrice()}`;
       menu["text"] = `*Lunch for Today*\n
       Type:\n
       \`i'm in\` to join us\n
@@ -295,4 +294,8 @@ controller.hears(['end session'], ['direct_message', 'direct_mention', 'mention'
   bot.reply(message, printMenu("organiser lunch price people total"));
   resetLunch();
 
+});
+
+controller.hears([''], ['direct_message', 'direct_mention', 'mention'], function (bot, message) {
+  bot.reply(message, "Sorry, I don't understand what you're saying.");
 });

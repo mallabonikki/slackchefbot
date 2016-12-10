@@ -29,9 +29,27 @@ const Storage = () => {
     const printMenu = (options) => {
       var menu = {
         "attachments" : [ {
+            "fallback": processFallback(options),
             "fields" : processOptions(options)
           }
         ]
+      }
+      function processFallback(options) {
+        return options.split(" ").map(
+            (o) => { switch( o ) {
+              case "lunch" : return `Dish: ${getLunch()}`;
+                break;
+              case "price" : return `Dish: ${getPrice()}`;
+                break;
+              case "organiser" : return `Organiser: <@${getAdminID()}>`;
+                break;
+              case "total" : return `Total Price: ${getPrice() * getConfirmed().length}`;
+                break;
+              case "people" : return `People who are in: ${getConfirmed().join(", ")}`;
+                break;
+              default : break;
+          }
+        } ).join(" ")
       }
       function processOptions(options) {
         return options.split(" ").map(
